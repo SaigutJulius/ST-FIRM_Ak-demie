@@ -20,9 +20,16 @@ load_env(Path(__file__).parent / ".env")
 import main  # noqa: E402  (runs init_db with env loaded → seeds admin user)
 
 REPO = Path(__file__).resolve().parent.parent
-idx = (REPO / "index.html").read_text(encoding="utf-8")
-block = re.search(r"const GALLERY = \[(.*?)\];", idx, re.S).group(1)
-entries = re.findall(r"\{\s*src:\s*'([^']+)',\s*cap:\s*'(.*?)'\s*\}", block)
+entries = []
+try:
+    idx = (REPO / "index.html").read_text(encoding="utf-8")
+    m = re.search(r"const GALLERY(?:_FALLBACK)? = \[(.*?)\];", idx, re.S)
+    if m:
+        entries = re.findall(r"\{\s*src:\s*'([^']+)',\s*cap:\s*'(.*?)'\s*\}", m.group(1))
+    else:
+        print("  (no fallback gallery found in index.html — starting empty)")
+except Exception as e:
+    print("  (could not read fallback gallery:", e, "— starting empty)")
 
 def to_md(cap):
     cap = re.sub(r"<b>(.*?)</b>", r"**\1**", cap)
