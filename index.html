@@ -1003,6 +1003,29 @@
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
   .gallery-item:hover .gallery-zoom { opacity: 1; transform: scale(1); }
+  /* image-open button (wraps the photo) */
+  .gallery-open {
+    display: block; width: 100%; padding: 0; margin: 0;
+    border: none; background: none; cursor: pointer;
+    position: relative; font: inherit; color: inherit;
+    appearance: none; -webkit-appearance: none;
+  }
+  /* per-thumbnail share button (always visible) */
+  .gallery-share-btn {
+    position: absolute; top: 10px; left: 10px; z-index: 4;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(8,14,48,0.62); border: 1px solid rgba(255,255,255,0.3);
+    color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    opacity: 0.95; transition: background 0.2s, color 0.2s, transform 0.2s, border-color 0.2s;
+  }
+  .gallery-share-btn:hover, .gallery-share-btn:focus-visible {
+    background: var(--gold); color: var(--navy-deep); border-color: var(--gold);
+    transform: scale(1.1);
+  }
+  .gallery-share-btn svg { width: 17px; height: 17px; fill: currentColor; }
   @media(max-width:1000px){ .gallery-masonry { column-count: 3; } }
   @media(max-width:680px){ .gallery-masonry { column-count: 2; column-gap: 12px; } .gallery-item { margin-bottom: 12px; } #gallery { padding: 80px 20px; } }
   @media(max-width:380px){ .gallery-masonry { column-count: 1; } }
@@ -1731,19 +1754,23 @@ const GALLERY = [
 (function renderGallery(){
   const grid = document.getElementById('galleryGrid');
   if (!grid) return;
+  const shareGlyph = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>';
   GALLERY.forEach((item, i) => {
     const plain = item.cap.replace(/<[^>]+>/g, '');
-    const btn = document.createElement('button');
-    btn.className = 'gallery-item';
-    btn.setAttribute('role', 'listitem');
-    btn.dataset.i = i;
-    btn.setAttribute('aria-label', 'View larger: ' + plain);
-    btn.innerHTML =
-      '<img src="' + item.src + '" alt="' + plain.replace(/"/g,'&quot;') + '" loading="lazy" decoding="async"/>' +
-      '<span class="gallery-zoom" aria-hidden="true">⤢</span>' +
-      '<span class="gallery-cap">' + item.cap + '</span>';
-    btn.addEventListener('click', () => openLightbox(i));
-    grid.appendChild(btn);
+    const fig = document.createElement('figure');
+    fig.className = 'gallery-item';
+    fig.setAttribute('role', 'listitem');
+    fig.dataset.i = i;
+    fig.innerHTML =
+      '<button class="gallery-open" aria-label="View larger: ' + plain.replace(/"/g,'&quot;') + '">' +
+        '<img src="' + item.src + '" alt="' + plain.replace(/"/g,'&quot;') + '" loading="lazy" decoding="async"/>' +
+        '<span class="gallery-zoom" aria-hidden="true">⤢</span>' +
+        '<span class="gallery-cap">' + item.cap + '</span>' +
+      '</button>' +
+      '<button class="gallery-share-btn" aria-label="Share: ' + plain.replace(/"/g,'&quot;') + '">' + shareGlyph + '</button>';
+    fig.querySelector('.gallery-open').addEventListener('click', () => openLightbox(i));
+    fig.querySelector('.gallery-share-btn').addEventListener('click', e => { e.stopPropagation(); openShareFor(i); });
+    grid.appendChild(fig);
   });
 }());
 
@@ -1908,6 +1935,11 @@ function buildShare(){
       .then(() => shareToastMsg('Link copied ✓'))
       .catch(() => shareToastMsg(pageUrl));
   });
+}
+function openShareFor(i){
+  openLightbox(i);      // sets lbIndex + clears popover
+  buildShare();
+  sharePop.classList.add('open');
 }
 lbShare.addEventListener('click', e => {
   e.stopPropagation();
