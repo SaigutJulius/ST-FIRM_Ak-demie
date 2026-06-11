@@ -8,10 +8,9 @@ services:
     plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python seed.py && uvicorn main:app --host 0.0.0.0 --port $PORT"
-    disk:
-      name: data
-      mountPath: /opt/render/project/src/admin-backend/data
-      sizeGB: 1
+    # NOTE: the free plan has no permanent disk, so uploaded photos reset when the
+    # service restarts/sleeps (seed.py re-creates your login + the original 12).
+    # Upgrade to a paid disk for permanent storage, or ask to save photos into the repo.
     envVars:
       - key: ADMIN_USER
         sync: false          # set in Render dashboard
