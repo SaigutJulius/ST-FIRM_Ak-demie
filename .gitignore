@@ -11,3 +11,10 @@ _*.png
 # OS cruft
 Thumbs.db
 .DS_Store
+
+# Admin backend secrets + runtime data (NEVER commit these)
+admin-backend/.env
+admin-backend/data/
+admin-backend/__pycache__/
+admin-backend/.venv/
+*.pyc

@@ -1,0 +1,25 @@
+# One-click deploy to Render (https://render.com) — free tier.
+# In Render: New ▸ Blueprint ▸ point at this repo. It reads this file.
+services:
+  - type: web
+    name: st-firm-akademie-admin
+    runtime: python
+    rootDir: admin-backend
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python seed.py && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/admin-backend/data
+      sizeGB: 1
+    envVars:
+      - key: ADMIN_USER
+        sync: false          # set in Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false          # set in Render dashboard (secret)
+      - key: JWT_SECRET
+        generateValue: true  # Render generates a strong secret
+      - key: ALLOWED_ORIGIN
+        value: https://saigutjulius.github.io
+      - key: PUBLIC_BASE
+        sync: false          # set to your Render URL after first deploy

@@ -1735,44 +1735,70 @@
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ── Gallery data (edit captions / add photos here) ── */
-const GALLERY = [
-  { src: 'gallery/akademie-crest.jpg',          cap: '<b>ST-Firm Akädemie</b> — Official Crest &amp; Identity' },
-  { src: 'gallery/certificate-achievement.jpg', cap: '<b>Certificate of Achievement</b> — Eng. Saigut Julius Kipkorir' },
-  { src: 'gallery/watcher-intelligence.jpg',    cap: '<b>ST-Firm Watcher</b> — AI-Governed Market Intelligence Infrastructure' },
-  { src: 'gallery/green-ai-mittelstand.jpg',    cap: '<b>Die Zukunft des Mittelstands</b> — Intelligent. Souverän. Nachhaltig.' },
-  { src: 'gallery/ssos-operating-stack.jpg',    cap: '<b>SSOS</b> — From Scattered Data to Structured Operational Intelligence' },
-  { src: 'gallery/ssos-continuity-checkup.jpg', cap: '<b>SSOS</b> — 15-Minute AI Business Continuity Checkup' },
-  { src: 'gallery/rg-master-orchestrator.jpg',  cap: '<b>RG Master</b> — Executive Intelligence Orchestrator' },
-  { src: 'gallery/ssos-sustainable-os.jpg',     cap: '<b>SSOS</b> — Sovereign Sustainable Operating System' },
-  { src: 'gallery/micro1-certificate.jpg',      cap: '<b>Certified by micro1</b> — Outstanding AI Interview Performance (2026)' },
-  { src: 'gallery/eignungstest.jpg',            cap: '<b>Eignungstest „Geeignet"</b> — TechPionier, Berlin (2026)' },
-  { src: 'gallery/st-firm-emblem.jpg',          cap: '<b>Saigut Tech</b> — Idee Meet’s Tech' },
-  { src: 'gallery/ssos-mark.png',               cap: '<b>SSOS</b> — The Green AI Mark' },
+/* GALLERY_API: leave "" to use the built-in list below. After deploying the
+   admin backend, set it to your backend URL, e.g.
+     const GALLERY_API = "https://st-firm-akademie-admin.onrender.com";
+   The site then shows the live, admin-managed gallery, with this list as an
+   instant fallback if the backend is asleep. */
+const GALLERY_API = "";
+const GALLERY_FALLBACK = [
+  { src: 'gallery/akademie-crest.jpg',          cap: '**ST-Firm Akädemie** — Official Crest & Identity' },
+  { src: 'gallery/certificate-achievement.jpg', cap: '**Certificate of Achievement** — Eng. Saigut Julius Kipkorir' },
+  { src: 'gallery/watcher-intelligence.jpg',    cap: '**ST-Firm Watcher** — AI-Governed Market Intelligence Infrastructure' },
+  { src: 'gallery/green-ai-mittelstand.jpg',    cap: '**Die Zukunft des Mittelstands** — Intelligent. Souverän. Nachhaltig.' },
+  { src: 'gallery/ssos-operating-stack.jpg',    cap: '**SSOS** — From Scattered Data to Structured Operational Intelligence' },
+  { src: 'gallery/ssos-continuity-checkup.jpg', cap: '**SSOS** — 15-Minute AI Business Continuity Checkup' },
+  { src: 'gallery/rg-master-orchestrator.jpg',  cap: '**RG Master** — Executive Intelligence Orchestrator' },
+  { src: 'gallery/ssos-sustainable-os.jpg',     cap: '**SSOS** — Sovereign Sustainable Operating System' },
+  { src: 'gallery/micro1-certificate.jpg',      cap: '**Certified by micro1** — Outstanding AI Interview Performance (2026)' },
+  { src: 'gallery/eignungstest.jpg',            cap: '**Eignungstest „Geeignet"** — TechPionier, Berlin (2026)' },
+  { src: 'gallery/st-firm-emblem.jpg',          cap: '**Saigut Tech** — Idee Meet’s Tech' },
+  { src: 'gallery/ssos-mark.png',               cap: '**SSOS** — The Green AI Mark' },
 ];
+let GALLERY = GALLERY_FALLBACK.slice();
 
-/* ── Render gallery ── */
-(function renderGallery(){
+// caption: store as plain text with **bold**; render safely (escape, then bold)
+function fmtCap(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>'); }
+function plainCap(s){ return (s||'').replace(/\*\*/g,'').replace(/<[^>]+>/g,''); }
+
+const GAL_SHARE_GLYPH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>';
+function renderGalleryGrid(){
   const grid = document.getElementById('galleryGrid');
   if (!grid) return;
-  const shareGlyph = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>';
+  grid.innerHTML = '';
   GALLERY.forEach((item, i) => {
-    const plain = item.cap.replace(/<[^>]+>/g, '');
+    const plain = plainCap(item.cap).replace(/"/g,'&quot;');
     const fig = document.createElement('figure');
     fig.className = 'gallery-item';
     fig.setAttribute('role', 'listitem');
     fig.dataset.i = i;
+    fig.style.transitionDelay = `${(i % 4) * 0.06}s`;
     fig.innerHTML =
-      '<button class="gallery-open" aria-label="View larger: ' + plain.replace(/"/g,'&quot;') + '">' +
-        '<img src="' + item.src + '" alt="' + plain.replace(/"/g,'&quot;') + '" loading="lazy" decoding="async"/>' +
+      '<button class="gallery-open" aria-label="View larger: ' + plain + '">' +
+        '<img src="' + item.src + '" alt="' + plain + '" loading="lazy" decoding="async"/>' +
         '<span class="gallery-zoom" aria-hidden="true">⤢</span>' +
-        '<span class="gallery-cap">' + item.cap + '</span>' +
+        '<span class="gallery-cap">' + fmtCap(item.cap) + '</span>' +
       '</button>' +
-      '<button class="gallery-share-btn" aria-label="Share: ' + plain.replace(/"/g,'&quot;') + '">' + shareGlyph + '</button>';
+      '<button class="gallery-share-btn" aria-label="Share: ' + plain + '">' + GAL_SHARE_GLYPH + '</button>';
     fig.querySelector('.gallery-open').addEventListener('click', () => openLightbox(i));
     fig.querySelector('.gallery-share-btn').addEventListener('click', e => { e.stopPropagation(); openShareFor(i); });
+    if (!reduceMotion) observer.observe(fig); else fig.classList.add('visible');
     grid.appendChild(fig);
   });
-}());
+}
+async function initGallery(){
+  renderGalleryGrid();                 // show fallback instantly
+  if (!GALLERY_API) return;
+  try {
+    const r = await fetch(GALLERY_API.replace(/\/+$/,'') + '/api/gallery', { mode: 'cors' });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (Array.isArray(data) && data.length) {
+      GALLERY = data.map(d => ({ src: d.src, cap: d.caption, share: d.share }));
+      renderGalleryGrid();
+    }
+  } catch (e) { /* backend asleep/unreachable — keep fallback */ }
+}
 
 /* ── Intersection Observer — scroll reveal ── */
 const observer = new IntersectionObserver((entries) => {
@@ -1782,15 +1808,17 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
 document.querySelectorAll(
-  '.fade-up, .program-card, .cert-card, .value-card, .csr-card, .journey-step, .philosophy-card, .gallery-item'
+  '.fade-up, .program-card, .cert-card, .value-card, .csr-card, .journey-step, .philosophy-card'
 ).forEach(el => observer.observe(el));
+
+// build the gallery (fallback first, then live API if configured)
+initGallery();
 
 /* ── Stagger cards ── */
 document.querySelectorAll('.program-card').forEach((c, i) => { c.style.transitionDelay = `${i * 0.04}s`; });
 document.querySelectorAll('.value-card').forEach((c, i) => { c.style.transitionDelay = `${i * 0.05}s`; });
 document.querySelectorAll('.csr-card').forEach((c, i) => { c.style.transitionDelay = `${i * 0.06}s`; });
 document.querySelectorAll('.philosophy-card').forEach((c, i) => { c.style.transitionDelay = `${i * 0.07}s`; });
-document.querySelectorAll('.gallery-item').forEach((c, i) => { c.style.transitionDelay = `${(i % 4) * 0.06}s`; });
 
 /* ── 3D tilt (disabled for reduced motion / touch) ── */
 if (!reduceMotion && window.matchMedia('(pointer:fine)').matches) {
@@ -1840,8 +1868,8 @@ function showImage(i){
   lbIndex = (i + GALLERY.length) % GALLERY.length;
   const item = GALLERY[lbIndex];
   lbImg.src = item.src;
-  lbImg.alt = item.cap.replace(/<[^>]+>/g, '');
-  lbCap.innerHTML = item.cap;
+  lbImg.alt = plainCap(item.cap);
+  lbCap.innerHTML = fmtCap(item.cap);
   lbCounter.textContent = (lbIndex + 1) + ' / ' + GALLERY.length;
   sharePop.classList.remove('open');
 }
@@ -1909,8 +1937,8 @@ async function nativeShare(item, title, pageUrl){
 }
 function buildShare(){
   const item = GALLERY[lbIndex];
-  const title = item.cap.replace(/<[^>]+>/g, '');
-  const pageUrl = SITE_BASE + 'share/' + slugOf(item.src) + '.html';
+  const title = plainCap(item.cap);
+  const pageUrl = item.share || (SITE_BASE + 'share/' + slugOf(item.src) + '.html');
   const tEnc = encodeURIComponent(title + ' — ST-Firm Akädemie');
   const uEnc = encodeURIComponent(pageUrl);
   const links = [
