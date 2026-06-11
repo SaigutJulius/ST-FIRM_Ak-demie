@@ -1,24 +1,26 @@
-# One-click deploy to Render (https://render.com) — free tier.
-# In Render: New ▸ Blueprint ▸ point at this repo. It reads this file.
+# Render Blueprint — deploys the ST-Firm Akädemie admin backend (free plan).
+# Render reads this file from the repo root.
 services:
   - type: web
     name: st-firm-akademie-admin
     runtime: python
     rootDir: admin-backend
     plan: free
+    region: frankfurt
+    branch: main
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python seed.py && uvicorn main:app --host 0.0.0.0 --port $PORT"
     # NOTE: the free plan has no permanent disk, so uploaded photos reset when the
     # service restarts/sleeps (seed.py re-creates your login + the original 12).
-    # Upgrade to a paid disk for permanent storage, or ask to save photos into the repo.
+    # Ask to "save photos into the repo" for free permanent storage.
     envVars:
       - key: ADMIN_USER
-        sync: false          # set in Render dashboard
+        sync: false          # set in the Render form
       - key: ADMIN_PASSWORD
-        sync: false          # set in Render dashboard (secret)
+        sync: false          # set in the Render form (secret)
       - key: JWT_SECRET
-        generateValue: true  # Render generates a strong secret
+        generateValue: true  # Render makes a strong secret automatically
       - key: ALLOWED_ORIGIN
         value: https://saigutjulius.github.io
       - key: PUBLIC_BASE
-        sync: false          # set to your Render URL after first deploy
+        sync: false          # set to your Render URL after the first deploy
